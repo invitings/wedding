@@ -123,51 +123,6 @@
     margin-top: 6px;
   }
 
-  /* ---------- guest name field ---------- */
-  .namefield{ margin-top: 34px; }
-  .guest-input{
-    width: 100%;
-    font-family: 'Cormorant Garamond', serif;
-    font-style: italic;
-    font-size: 20px;
-    text-align: center;
-    background: transparent;
-    border: none;
-    border-bottom: 1px solid var(--gold);
-    color: var(--ink);
-    padding: 8px 4px;
-    outline: none;
-  }
-  .guest-input::placeholder{ color: var(--gold); opacity: .6; font-style: italic; }
-  .guest-input:focus{ border-bottom-color: var(--rose); }
-
-  .gender-toggle{ display:flex; gap: 10px; justify-content:center; margin-top: 16px; }
-  .gender-btn{
-    font-family: 'Jost', sans-serif;
-    font-size: 12px;
-    letter-spacing: .08em;
-    text-transform: uppercase;
-    padding: 10px 18px;
-    border-radius: 2px;
-    cursor: pointer;
-    border: 1px solid var(--gold);
-    background: transparent;
-    color: var(--ink);
-    transition: background .25s ease, color .25s ease;
-  }
-  .gender-btn:hover{ background: rgba(169,130,90,0.12); }
-  .gender-btn.active{ background: var(--gold); color: #fff; border-color: var(--gold); }
-  .gender-btn:focus-visible{ outline: 2px solid var(--rose); outline-offset: 2px; }
-
-  .namefield .sub{ font-size: 13px; line-height: 1.5; }
-  .namefield code{
-    font-family: 'Jost', sans-serif;
-    background: var(--bg-card);
-    padding: 1px 5px;
-    border-radius: 2px;
-    font-size: 12px;
-  }
-
   /* ---------- countdown ---------- */
   .countdown{
     display: flex;
@@ -393,12 +348,6 @@ document.addEventListener('DOMContentLoaded', function(){
 
   // ---------- guest name (нужно определить до RSVP) ----------
   var guestLine = document.getElementById('guest-line');
-  var guestInput = document.getElementById('guest-input');
-  var namefield = document.getElementById('namefield');
-  var copyBtn = document.getElementById('copy-link-btn');
-  var copyResponse = document.getElementById('copy-response');
-  var genderMBtn = document.getElementById('gender-m');
-  var genderFBtn = document.getElementById('gender-f');
 
   var params = new URLSearchParams(window.location.search);
   var guestParam = params.get('guest');
@@ -407,7 +356,6 @@ document.addEventListener('DOMContentLoaded', function(){
 
   function resolveGuestName(){
     if(guestParam && guestParam.trim()) return guestParam.trim();
-    if(guestInput && guestInput.value.trim()) return guestInput.value.trim();
     return null;
   }
 
@@ -488,65 +436,16 @@ document.addEventListener('DOMContentLoaded', function(){
     'https://www.google.com/maps/search/?api=1&query=' +
     encodeURIComponent('Ресторан Taj Mahal Golden Hall');
 
-  // ---------- personalized greeting ----------
+  // ---------- personalized greeting (работает только если в ссылке есть ?guest=Имя) ----------
   function applyGuestName(name, gender){
     if(name && name.trim()){
       var salutation = gender === 'm' ? 'Дорогой' : (gender === 'f' ? 'Дорогая' : 'Дорогие');
       guestLine.textContent = salutation + ' ' + name.trim() + ', приглашаем на торжество';
-    } else {
-      guestLine.textContent = 'Приглашаем на торжество';
     }
   }
 
-  function setGenderUI(gender){
-    selectedGender = gender;
-    genderMBtn.classList.toggle('active', gender === 'm');
-    genderFBtn.classList.toggle('active', gender === 'f');
-  }
-
   if(guestParam){
-    // Ссылка уже именная — показываем приветствие, прячем поле для отправителя
     applyGuestName(guestParam, selectedGender);
-    namefield.style.display = 'none';
-  } else {
-    // Черновой режим: отправитель сам вписывает имя и выбирает обращение
-    setGenderUI(selectedGender);
-
-    guestInput.addEventListener('input', function(){
-      applyGuestName(guestInput.value, selectedGender);
-    });
-
-    genderMBtn.addEventListener('click', function(){
-      setGenderUI('m');
-      applyGuestName(guestInput.value, selectedGender);
-    });
-    genderFBtn.addEventListener('click', function(){
-      setGenderUI('f');
-      applyGuestName(guestInput.value, selectedGender);
-    });
-
-    copyBtn.addEventListener('click', function(){
-      var name = guestInput.value.trim();
-      var url = new URL(window.location.href);
-      if(name){ url.searchParams.set('guest', name); }
-      else { url.searchParams.delete('guest'); }
-      if(selectedGender){ url.searchParams.set('gender', selectedGender); }
-      else { url.searchParams.delete('gender'); }
-      var link = url.toString();
-
-      function showCopied(){
-        copyResponse.textContent = name ? ('Ссылка для «' + name + '» скопирована') : 'Ссылка скопирована';
-        copyResponse.classList.add('show');
-      }
-
-      if(navigator.clipboard && navigator.clipboard.writeText){
-        navigator.clipboard.writeText(link).then(showCopied).catch(function(){
-          window.prompt('Скопируйте ссылку вручную:', link);
-        });
-      } else {
-        window.prompt('Скопируйте ссылку вручную:', link);
-      }
-    });
   }
 
 
