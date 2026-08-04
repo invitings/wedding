@@ -1,1 +1,680 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Первое свидание — Человек-паук: Новый день</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bangers&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --spidey-red: #d62828;
+    --spidey-red-deep: #a11f1f;
+    --spidey-blue: #1b3a6b;
+    --spidey-blue-deep: #10233f;
+    --ink: #0c0c0c;
+    --paper: #f4f1e8;
+    --pow-yellow: #f3c22c;
+  }
 
+  * { box-sizing: border-box; }
+  html, body { margin:0; padding:0; min-height:100%; }
+
+  body {
+    font-family: 'Inter', sans-serif;
+    color: var(--paper);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px 14px;
+    background:
+      radial-gradient(circle at 20% 15%, rgba(214,40,40,0.35), transparent 45%),
+      radial-gradient(circle at 85% 80%, rgba(27,58,107,0.45), transparent 50%),
+      var(--ink);
+    overflow-x: hidden;
+    position: relative;
+  }
+
+  /* comic halftone dots */
+  body::before {
+    content: "";
+    position: fixed; inset: 0;
+    background-image: radial-gradient(var(--paper) 1px, transparent 1.4px);
+    background-size: 16px 16px;
+    opacity: 0.05;
+    pointer-events: none;
+  }
+
+  /* web lines corner */
+  .web-corner {
+    position: fixed;
+    width: 220px; height: 220px;
+    opacity: 0.18;
+    pointer-events: none;
+    z-index: 0;
+  }
+  .web-corner.tl { top: -40px; left: -40px; }
+  .web-corner.br { bottom: -40px; right: -40px; transform: rotate(180deg); }
+
+  .stage {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    max-width: 460px;
+  }
+
+  .eyebrow {
+    text-align: center;
+    font-family: 'Bangers', cursive;
+    letter-spacing: 0.12em;
+    font-size: 15px;
+    color: var(--pow-yellow);
+    margin-bottom: 8px;
+    text-shadow: 1px 1px 0 var(--ink);
+  }
+
+  .card {
+    position: relative;
+    background: linear-gradient(180deg, #16151a, #0c0c0c);
+    border: 3px solid var(--spidey-red);
+    border-radius: 14px;
+    padding: 30px 24px;
+    box-shadow:
+      0 0 0 3px var(--ink),
+      0 0 0 6px var(--spidey-blue),
+      0 25px 60px rgba(0,0,0,0.6);
+    min-height: 340px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+
+  .screen {
+    display: none;
+    position: relative;
+  }
+  .screen.active { display: block; animation: screenIn 0.6s cubic-bezier(0.22, 1, 0.36, 1); }
+  .screen.leaving { animation: screenOut 0.35s ease forwards; }
+  @keyframes screenIn {
+    from { opacity: 0; transform: translateY(16px) scale(0.96); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+  }
+  @keyframes screenOut {
+    from { opacity: 1; transform: translateY(0) scale(1); }
+    to { opacity: 0; transform: translateY(-12px) scale(0.97); }
+  }
+
+  /* staggered entrance for option buttons and title/message blocks */
+  .screen.active .opt {
+    animation: riseIn 0.45s cubic-bezier(0.22, 1, 0.36, 1) backwards;
+  }
+  .screen.active .opt:nth-child(1){ animation-delay: 0.08s; }
+  .screen.active .opt:nth-child(2){ animation-delay: 0.16s; }
+  .screen.active .opt:nth-child(3){ animation-delay: 0.24s; }
+  .screen.active .opt:nth-child(4){ animation-delay: 0.32s; }
+  .screen.active .question {
+    animation: riseIn 0.45s cubic-bezier(0.22, 1, 0.36, 1) backwards;
+  }
+  .screen.active .title,
+  .screen.active .subtitle-wrap,
+  .screen.active .message,
+  .screen.active .final-badge,
+  .screen.active .final-text,
+  .screen.active .final-love,
+  .screen.active .summary {
+    animation: riseIn 0.5s cubic-bezier(0.22, 1, 0.36, 1) backwards;
+  }
+  .screen.active .subtitle-wrap { animation-delay: 0.1s; }
+  .screen.active .message { animation-delay: 0.18s; }
+  .screen.active .btn-row { animation: riseIn 0.5s cubic-bezier(0.22, 1, 0.36, 1) backwards; animation-delay: 0.26s; }
+  .screen.active .final-text { animation-delay: 0.12s; }
+  .screen.active .final-love { animation-delay: 0.22s; }
+  .screen.active .summary { animation-delay: 0.32s; }
+
+  @keyframes riseIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* selected answer highlight */
+  button.opt.selected {
+    background: rgba(214,40,40,0.28);
+    border-color: var(--pow-yellow);
+    transform: scale(1.03);
+  }
+
+  /* reaction bubble overlay */
+  .reaction-overlay {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+    z-index: 5;
+  }
+  .reaction {
+    font-family: 'Bangers', cursive;
+    font-size: 26px;
+    letter-spacing: 0.02em;
+    color: var(--ink);
+    background: var(--pow-yellow);
+    border: 3px solid var(--ink);
+    border-radius: 16px;
+    padding: 14px 26px;
+    text-align: center;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    opacity: 0;
+    transform: scale(0.5) rotate(-4deg);
+    max-width: 80%;
+  }
+  .reaction.show {
+    animation: reactionPop 1.4s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  }
+  @keyframes reactionPop {
+    0%   { opacity: 0; transform: scale(0.4) rotate(-8deg); }
+    12%  { opacity: 1; transform: scale(1.12) rotate(3deg); }
+    22%  { opacity: 1; transform: scale(1) rotate(-1deg); }
+    78%  { opacity: 1; transform: scale(1) rotate(0deg); }
+    100% { opacity: 0; transform: scale(0.85) translateY(-14px) rotate(2deg); }
+  }
+
+  h1.title {
+    font-family: 'Bangers', cursive;
+    font-size: 44px;
+    letter-spacing: 0.03em;
+    line-height: 1.05;
+    color: var(--spidey-red);
+    -webkit-text-stroke: 1.5px var(--ink);
+    text-align: center;
+    margin: 0 0 4px;
+  }
+
+  .subtitle {
+    text-align: center;
+    font-size: 14px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--spidey-blue);
+    background: var(--pow-yellow);
+    display: inline-block;
+    padding: 3px 12px;
+    border-radius: 3px;
+    font-weight: 700;
+    margin: 0 auto 22px;
+    transform: rotate(-2deg);
+  }
+  .subtitle-wrap { text-align: center; margin-bottom: 20px; }
+
+  .message {
+    font-size: 17px;
+    line-height: 1.55;
+    text-align: center;
+    color: var(--paper);
+    margin: 0 0 26px;
+  }
+
+  .btn-row {
+    display: flex;
+    gap: 14px;
+    justify-content: center;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+
+  .btn {
+    font-family: 'Bangers', cursive;
+    font-size: 19px;
+    letter-spacing: 0.04em;
+    border: none;
+    border-radius: 8px;
+    padding: 13px 28px;
+    cursor: pointer;
+    transition: transform 0.15s ease, opacity 0.15s ease;
+  }
+  .btn-yes {
+    background: var(--spidey-red);
+    color: var(--paper);
+    box-shadow: 0 6px 0 var(--spidey-red-deep);
+  }
+  .btn-yes:hover { transform: translateY(-2px); }
+  .btn-yes:active { transform: translateY(4px); box-shadow: 0 2px 0 var(--spidey-red-deep); }
+
+  .btn-no {
+    background: var(--spidey-blue);
+    color: var(--paper);
+    box-shadow: 0 6px 0 var(--spidey-blue-deep);
+    transform-origin: center;
+  }
+  .btn-no:active { transform: translateY(2px) scale(var(--no-scale, 1)); }
+
+  .question {
+    font-family: 'Bangers', cursive;
+    font-size: 25px;
+    letter-spacing: 0.02em;
+    color: var(--pow-yellow);
+    text-align: center;
+    margin: 0 0 20px;
+    -webkit-text-stroke: 1px var(--ink);
+  }
+
+  .options {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+
+  button.opt {
+    font-family: 'Inter', sans-serif;
+    font-weight: 600;
+    font-size: 14.5px;
+    color: var(--paper);
+    background: rgba(244,241,232,0.05);
+    border: 2px solid var(--spidey-blue);
+    border-radius: 8px;
+    padding: 14px 8px;
+    cursor: pointer;
+    transition: transform 0.15s ease, background 0.15s ease, border-color 0.15s ease;
+    text-align: center;
+  }
+  button.opt:hover {
+    background: rgba(214,40,40,0.15);
+    border-color: var(--spidey-red);
+    transform: translateY(-2px);
+  }
+  button.opt:focus-visible { outline: 2px solid var(--pow-yellow); outline-offset: 2px; }
+
+  .custom-wrap {
+    display: none;
+    margin-top: 14px;
+    gap: 10px;
+  }
+  .custom-wrap.active { display: flex; }
+  .custom-wrap input {
+    flex: 1;
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    padding: 11px 12px;
+    border-radius: 8px;
+    border: 2px solid var(--spidey-blue);
+    background: rgba(244,241,232,0.08);
+    color: var(--paper);
+  }
+  .custom-wrap input::placeholder { color: rgba(244,241,232,0.4); }
+  .custom-wrap button {
+    font-family: 'Bangers', cursive;
+    font-size: 15px;
+    padding: 0 18px;
+    border-radius: 8px;
+    border: none;
+    background: var(--pow-yellow);
+    color: var(--ink);
+    cursor: pointer;
+  }
+
+  /* final screen */
+  .final-badge {
+    text-align: center;
+    font-family: 'Bangers', cursive;
+    font-size: 30px;
+    color: var(--paper);
+    -webkit-text-stroke: 1px var(--ink);
+    margin: 0 0 14px;
+  }
+  .final-text {
+    font-size: 17px;
+    line-height: 1.6;
+    text-align: center;
+    margin: 0 0 18px;
+  }
+  .final-love {
+    text-align: center;
+    font-family: 'Bangers', cursive;
+    font-size: 24px;
+    color: var(--spidey-red);
+    -webkit-text-stroke: 1px var(--ink);
+    margin: 0 0 24px;
+  }
+
+  .summary {
+    background: rgba(244,241,232,0.06);
+    border: 1px dashed rgba(244,241,232,0.3);
+    border-radius: 10px;
+    padding: 14px 16px;
+  }
+  .summary .row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 13px;
+    padding: 6px 0;
+    border-bottom: 1px solid rgba(244,241,232,0.1);
+  }
+  .summary .row:last-child { border-bottom: none; }
+  .summary .k { color: rgba(244,241,232,0.55); text-transform: uppercase; letter-spacing: 0.04em; font-size: 11px; }
+  .summary .v { font-weight: 600; text-align: right; }
+
+  .status {
+    text-align: center;
+    font-size: 11px;
+    color: rgba(244,241,232,0.35);
+    margin-top: 14px;
+  }
+
+  @media (max-width: 380px){
+    h1.title{ font-size: 36px; }
+    .question{ font-size: 21px; }
+    .options{ grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<svg class="web-corner tl" viewBox="0 0 200 200" fill="none" stroke="#f4f1e8" stroke-width="1">
+  <path d="M0,0 L200,200 M0,40 L160,200 M0,80 L120,200 M0,120 L80,200 M0,160 L40,200 M40,0 L200,160 M80,0 L200,120 M120,0 L200,80 M160,0 L200,40"/>
+  <path d="M0,0 Q60,60 0,200 M0,0 Q100,100 40,200 M0,0 Q140,140 80,200 M0,0 Q170,170 120,200 M0,0 Q190,190 160,200" stroke-width="0.7"/>
+</svg>
+<svg class="web-corner br" viewBox="0 0 200 200" fill="none" stroke="#f4f1e8" stroke-width="1">
+  <path d="M0,0 L200,200 M0,40 L160,200 M0,80 L120,200 M0,120 L80,200 M0,160 L40,200 M40,0 L200,160 M80,0 L200,120 M120,0 L200,80 M160,0 L200,40"/>
+</svg>
+
+<div class="stage">
+  <div class="eyebrow">// СЕТЬ ПРИГЛАШЕНИЙ АКТИВИРОВАНА //</div>
+
+  <div class="card" id="card">
+
+    <div class="reaction-overlay">
+      <div class="reaction" id="reaction"></div>
+    </div>
+
+    <!-- Screen 0: Intro -->
+    <section class="screen active" data-screen="0">
+      <h1 class="title">ЧУЙКА<br>НЕ ВРЁТ</h1>
+      <div class="subtitle-wrap"><span class="subtitle">Спецоперация «Свидание»</span></div>
+      <p class="message">Моё паучье чутьё подсказывает: нам стоит сходить в кино.<br>Приглашаю тебя на наше первое свидание.</p>
+      <div class="btn-row">
+        <button class="btn btn-yes" id="yesBtn">Да 🕸️</button>
+        <button class="btn btn-no" id="noBtn">Не смогу</button>
+      </div>
+    </section>
+
+    <!-- Screen 1: Snacks -->
+    <section class="screen" data-screen="1">
+      <p class="question">Какие вкусняшки берём?</p>
+      <div class="options" id="opt-snack">
+        <button class="opt" data-value="Попкорн">Попкорн</button>
+        <button class="opt" data-value="Чипсы">Чипсы</button>
+        <button class="opt" data-value="Ничего">Ничего</button>
+        <button class="opt" data-custom="1">Свой вариант</button>
+      </div>
+      <div class="custom-wrap" id="custom-snack">
+        <input type="text" placeholder="Напиши свой вариант">
+        <button type="button">Ок</button>
+      </div>
+    </section>
+
+    <!-- Screen 2: Drink -->
+    <section class="screen" data-screen="2">
+      <p class="question">Какой напиток возьмём?</p>
+      <div class="options" id="opt-drink">
+        <button class="opt" data-value="Кола">Кола</button>
+        <button class="opt" data-value="Фанта">Фанта</button>
+        <button class="opt" data-value="Сок">Сок</button>
+        <button class="opt" data-custom="1">Свой вариант</button>
+      </div>
+      <div class="custom-wrap" id="custom-drink">
+        <input type="text" placeholder="Напиши свой вариант">
+        <button type="button">Ок</button>
+      </div>
+    </section>
+
+    <!-- Screen 3: After movie -->
+    <section class="screen" data-screen="3">
+      <p class="question">Куда пойдём после фильма?</p>
+      <div class="options" id="opt-after">
+        <button class="opt" data-value="Кафе">В кафешку ненадолго</button>
+        <button class="opt" data-value="Ужин">На ужин</button>
+        <button class="opt" data-value="Мороженое">За мороженым</button>
+        <button class="opt" data-custom="1">Свой вариант</button>
+      </div>
+      <div class="custom-wrap" id="custom-after">
+        <input type="text" placeholder="Напиши свой вариант">
+        <button type="button">Ок</button>
+      </div>
+    </section>
+
+    <!-- Screen 4a: Cafe choice -->
+    <section class="screen" data-screen="4a">
+      <p class="question">Какое кафе хочешь посетить?</p>
+      <div class="options" id="opt-cafe">
+        <button class="opt" data-value="Мусс">Мусс</button>
+        <button class="opt" data-value="Амид">Амид</button>
+        <button class="opt" data-value="Чоколокма">Чоколокма</button>
+        <button class="opt" data-custom="1">Свой вариант</button>
+      </div>
+      <div class="custom-wrap" id="custom-cafe">
+        <input type="text" placeholder="Напиши свой вариант">
+        <button type="button">Ок</button>
+      </div>
+    </section>
+
+    <!-- Screen 4b: Dinner choice -->
+    <section class="screen" data-screen="4b">
+      <p class="question">Какое заведение посетим?</p>
+      <div class="options" id="opt-dinner">
+        <button class="opt" data-value="Баффало">Баффало</button>
+        <button class="opt" data-value="Паприка">Паприка</button>
+        <button class="opt" data-value="Токио">Токио</button>
+        <button class="opt" data-custom="1">Свой вариант</button>
+      </div>
+      <div class="custom-wrap" id="custom-dinner">
+        <input type="text" placeholder="Напиши свой вариант">
+        <button type="button">Ок</button>
+      </div>
+    </section>
+
+    <!-- Screen 5: Final -->
+    <section class="screen" data-screen="5">
+      <p class="final-badge">ОТЛИЧНО.</p>
+      <p class="final-text">
+        «Человек-паук: Новый день»<br>
+        06.08.2026 · 15:50<br>
+        Жду тебя у входа в кинотеатр в 15:30.
+      </p>
+      <p class="final-love">До встречи, солнышко ❤️</p>
+      <div class="summary" id="summary"></div>
+      <p class="status" id="status">Сохраняю билет…</p>
+    </section>
+
+  </div>
+</div>
+
+<script>
+  // ── ЗАМЕНИ НА СВОЙ URL ПОСЛЕ ДЕПЛОЯ GOOGLE APPS SCRIPT ──
+  const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwxnFo_ije2kVWeGMgS1qQoRo1K9qblMcP8eAAFYtDfIpWcGv8wf4nKvpXw61BI6zhx/exec";
+
+  const answers = { snack: null, drink: null, after: null, place: null };
+  let isTransitioning = false;
+
+  const REACTIONS = [
+    'Отличный выбор!',
+    'Мне очень нравится 😍',
+    'О, вот это вкус!',
+    'Идеально 👌',
+    'Прямо мои мысли!',
+    'С тобой не соскучишься 😄',
+    'Оооо, беру на заметку!',
+    'Вот это по-нашему!'
+  ];
+  const YES_REACTIONS = ['Ура! 🕸️', 'Есть контакт! 🎉', 'Чуйка не подвела!'];
+
+  function sleep(ms){ return new Promise(r => setTimeout(r, ms)); }
+
+  function pickReaction(list){
+    return list[Math.floor(Math.random() * list.length)];
+  }
+
+  function showReaction(text){
+    return new Promise(resolve => {
+      const el = document.getElementById('reaction');
+      el.textContent = text;
+      el.classList.remove('show');
+      // force reflow so the animation restarts
+      void el.offsetWidth;
+      el.classList.add('show');
+      setTimeout(resolve, 1400);
+    });
+  }
+
+  async function goTo(id, reactionText){
+    if (isTransitioning) return;
+    isTransitioning = true;
+
+    const current = document.querySelector('.screen.active');
+
+    if (reactionText) {
+      await showReaction(reactionText);
+    } else {
+      await sleep(250);
+    }
+
+    current.classList.add('leaving');
+    await sleep(320);
+    current.classList.remove('active', 'leaving');
+
+    document.querySelector(`.screen[data-screen="${id}"]`).classList.add('active');
+    isTransitioning = false;
+  }
+
+  /* ---- "Не смогу" shrinking button ---- */
+  const noBtn = document.getElementById('noBtn');
+  const yesBtn = document.getElementById('yesBtn');
+  let noCount = 0;
+  const maxNo = 6;
+  noBtn.addEventListener('click', () => {
+    noCount++;
+    const scale = Math.max(1 - noCount * 0.16, 0.02);
+    const opacity = Math.max(1 - noCount * 0.17, 0);
+    noBtn.style.transform = `scale(${scale})`;
+    noBtn.style.opacity = opacity;
+    if (noCount >= maxNo) {
+      noBtn.style.visibility = 'hidden';
+      noBtn.disabled = true;
+    }
+  });
+  yesBtn.addEventListener('click', () => {
+    if (isTransitioning) return;
+    goTo(1, pickReaction(YES_REACTIONS));
+  });
+
+  /* ---- generic option binder with optional custom input ---- */
+  function bindOptions(groupId, key, onChosen){
+    const group = document.getElementById(groupId);
+    const customWrap = document.getElementById('custom-' + groupId.replace('opt-', ''));
+
+    group.querySelectorAll('.opt[data-value]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        if (isTransitioning) return;
+        group.querySelectorAll('.opt').forEach(b => b.classList.remove('selected'));
+        btn.classList.add('selected');
+        answers[key] = btn.dataset.value;
+        onChosen(btn.dataset.value);
+      });
+    });
+
+    const customBtn = group.querySelector('.opt[data-custom]');
+    if (customBtn && customWrap){
+      customBtn.addEventListener('click', () => {
+        if (isTransitioning) return;
+        customWrap.classList.add('active');
+        customWrap.querySelector('input').focus();
+      });
+      const confirmCustom = () => {
+        if (isTransitioning) return;
+        const val = customWrap.querySelector('input').value.trim();
+        if (!val) return;
+        customBtn.classList.add('selected');
+        answers[key] = val;
+        onChosen(val);
+      };
+      customWrap.querySelector('button').addEventListener('click', confirmCustom);
+      customWrap.querySelector('input').addEventListener('keydown', e => {
+        if (e.key === 'Enter') confirmCustom();
+      });
+    }
+  }
+
+  bindOptions('opt-snack', 'snack', () => goTo(2, pickReaction(REACTIONS)));
+  bindOptions('opt-drink', 'drink', () => goTo(3, pickReaction(REACTIONS)));
+
+  bindOptions('opt-after', 'after', (value) => {
+    if (value === 'Кафе') {
+      goTo('4a', pickReaction(REACTIONS));
+    } else if (value === 'Ужин') {
+      goTo('4b', pickReaction(REACTIONS));
+    } else {
+      answers.place = null;
+      finish();
+    }
+  });
+
+  bindOptions('opt-cafe', 'place', () => finish());
+  bindOptions('opt-dinner', 'place', () => finish());
+
+  async function finish(){
+    if (isTransitioning) return;
+    isTransitioning = true;
+    await showReaction(pickReaction(REACTIONS));
+    const current = document.querySelector('.screen.active');
+    current.classList.add('leaving');
+    await sleep(320);
+    current.classList.remove('active', 'leaving');
+    renderSummary();
+    document.querySelector(`.screen[data-screen="5"]`).classList.add('active');
+    isTransitioning = false;
+    submitAnswers();
+  }
+
+  function renderSummary(){
+    const rows = [
+      ['Вкусняшки', answers.snack],
+      ['Напиток', answers.drink],
+      ['После фильма', answers.after],
+    ];
+    if (answers.place) rows.push(['Место', answers.place]);
+    document.getElementById('summary').innerHTML = rows.map(([k,v]) =>
+      `<div class="row"><span class="k">${k}</span><span class="v">${v}</span></div>`
+    ).join('');
+  }
+
+  async function submitAnswers(){
+    const statusEl = document.getElementById('status');
+    if (!SCRIPT_URL || SCRIPT_URL.indexOf('PASTE_YOUR') === 0) {
+      statusEl.textContent = 'Билет готов (сохранение в таблицу не настроено)';
+      return;
+    }
+    try {
+      await fetch(SCRIPT_URL, {
+        method: 'POST',
+        mode: 'no-cors',
+        headers: { 'Content-Type': 'text/plain' },
+        body: JSON.stringify({
+          film: 'Человек-паук: Новый день',
+          date: '06.08.2026',
+          time: '15:50',
+          snack: answers.snack,
+          drink: answers.drink,
+          after: answers.after,
+          place: answers.place || '—',
+          submittedAt: new Date().toLocaleString('ru-RU')
+        })
+      });
+      statusEl.textContent = 'Билет сохранён ✓';
+    } catch (err) {
+      statusEl.textContent = 'Билет готов (не удалось сохранить онлайн)';
+    }
+  }
+</script>
+
+</body>
+</html>
